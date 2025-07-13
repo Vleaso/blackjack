@@ -9,24 +9,22 @@
       --bg-color: rgb(18, 17, 23);
       --card-color: rgb(109, 252, 135);
       --card-width: 20vw;
-      --card-gap: calc(var(--card-width) / 2);
     }
 
     body {
       margin: 0;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       background-color: var(--bg-color);
     }
 
-    /* Container for both hands */
     #hands-container {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: var(--card-gap);
+      gap: calc(var(--card-width) / 2);
       padding-top: 5vh;
     }
 
@@ -42,14 +40,23 @@
       font-size: 1.25rem;
     }
 
+    .cards {
+      display: flex;
+      gap: 0.5rem;
+    }
+
     .card {
       width: var(--card-width);
       height: calc(var(--card-width) * 7 / 5);
       background-color: var(--card-color);
       border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.5rem;
     }
 
-    /* Controls row */
     #controls {
       display: flex;
       gap: 1rem;
@@ -61,13 +68,11 @@
       cursor: pointer;
     }
 
-    /* Fixed money counter */
     #money-counter {
       position: fixed;
       bottom: 0;
       width: 100%;
       text-align: center;
-      color: white;
       font-size: 2rem;
       padding: 1rem 0;
       background: rgba(0,0,0,0.2);
@@ -77,12 +82,12 @@
 <body>
   <div id="hands-container">
     <div class="hand">
-      <div class="card-label">House</div>
-      <div class="card"></div>
+      <div class="card-label">House (<span id="house-score">0</span>)</div>
+      <div class="cards" id="house-cards"></div>
     </div>
     <div class="hand">
-      <div class="card-label">Player</div>
-      <div class="card"></div>
+      <div class="card-label">Player (<span id="player-score">0</span>)</div>
+      <div class="cards" id="player-cards"></div>
     </div>
   </div>
 
@@ -94,20 +99,119 @@
   <div id="money-counter">0</div>
 
   <script>
-    // placeholder money logic
+    // game state
+    let playerCards = [];
+    let houseCards = [];
     let money = 0;
+    let gameOver = false;
+
+    // DOM refs
+    const pcDiv = document.getElementById('player-cards');
+    const hcDiv = document.getElementById('house-cards');
+    const psSpan = document.getElementById('player-score');
+    const hsSpan = document.getElementById('house-score');
     const counter = document.getElementById('money-counter');
+    const hitBtn = document.getElementById('hit-button');
+    const standBtn = document.getElementById('stand-button');
+
+    function drawCard() {
+      return Math.floor(Math.random() * 10) + 1;
+    }
+
+    function calcScore(cards) {
+      let total = 0, aces = 0;
+      cards.forEach(c => {
+        if (c === 1) aces++;
+        else total += c;
+      });
+      total += aces * 11;
+      while (total > 21 && aces > 0) {
+        total -= 10;
+        aces--;
+      }
+      return total;
+    }
+
     function updateMoney() {
       counter.textContent = money;
+      counter.style.color = money < 0 ? 'red' : 'white';
     }
-    updateMoney();
 
-    // example: increment money on Hit
-    document.getElementById('hit-button')
-      .addEventListener('click', () => {
-        money += 1;
-        updateMoney();
+    function render() {
+      // clear and redraw cards
+      pcDiv.innerHTML = '';
+      playerCards.forEach(c => {
+        const d = document.createElement('div');
+        d.className = 'card';
+        d.textContent = c;
+        pcDiv.appendChild(d);
       });
+      hcDiv.innerHTML = '';
+      houseCards.forEach(c => {
+        const d = document.createElement('div');
+        d.className = 'card';
+        d.textContent = c;
+        hcDiv.appendChild(d);
+      });
+      // update scores
+      psSpan.textContent = calcScore(playerCards);
+      hsSpan.textContent = calcScore(houseCards);
+    }
+
+    function startRound() {
+      gameOver = false;
+      playerCards = [drawCard()];
+      houseCards  = [drawCard()];
+      render();
+    }
+
+    function playerHit() {
+      if (gameOver) {
+        startRound();
+        return;
+      }
+      playerCards.push(drawCard());
+      if (calcScore(playerCards) > 21) {
+        endRound();
+      } else {
+        // house auto-hit if <17
+        housePlay();
+      }
+      render();
+    }
+
+    function housePlay() {
+      while (calcScore(houseCards) < 17) {
+        houseCards.push(drawCard());
+      }
+    }
+
+    function endRound() {
+      gameOver = true;
+      const p = calcScore(playerCards);
+      const h = calcScore(houseCards);
+      if (p > 21 || (h <= 21 && h > p)) {
+        money -= 100;
+      } else if (h > 21 || p > h) {
+        money += 100;
+      }
+      updateMoney();
+      render();
+    }
+
+    hitBtn.addEventListener('click', () => {
+      if (playerCards.length === 0) startRound();
+      playerHit();
+    });
+
+    standBtn.addEventListener('click', () => {
+      if (playerCards.length === 0) return; 
+      housePlay();
+      endRound();
+    });
+
+    // initialize display
+    updateMoney();
   </script>
 </body>
 </html>
