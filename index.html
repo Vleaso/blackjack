@@ -3,19 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My HTML Game</title>
+  <title>Blackjack Prototype</title>
   <style>
-    /* root‐level CSS variables for easy tweaking */
     :root {
       --bg-color: rgb(18, 17, 23);
-      --square-color: rgb(109, 252, 135);
-      /* base square width (20vw = 20% of viewport width) */
-      --square-width: 20vw;
-      /* gap = half the square’s width */
-      --square-gap: calc(var(--square-width) / 2);
+      --card-color: rgb(109, 252, 135);
+      --card-width: 20vw;
+      --card-gap: calc(var(--card-width) / 2);
     }
 
-    /* make body fill screen, stack squares & money */
     body {
       margin: 0;
       height: 100vh;
@@ -25,55 +21,89 @@
       background-color: var(--bg-color);
     }
 
-    /* container to stack the two squares with the correct gap */
-    #squares-container {
+    /* Container for both hands */
+    #hands-container {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: var(--square-gap);
-      /* push squares down a bit if you like:
-         padding-top: 10vh; */
+      gap: var(--card-gap);
+      padding-top: 5vh;
     }
 
-    /* each square, ratio 5:7 (w:h) */
-    .square {
-      width: var(--square-width);
-      height: calc(var(--square-width) * 7 / 5);
-      background-color: var(--square-color);
+    .hand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    /* money counter at bottom center */
+    .card-label {
+      color: white;
+      margin-bottom: 0.5rem;
+      font-size: 1.25rem;
+    }
+
+    .card {
+      width: var(--card-width);
+      height: calc(var(--card-width) * 7 / 5);
+      background-color: var(--card-color);
+      border-radius: 0.5rem;
+    }
+
+    /* Controls row */
+    #controls {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    #controls button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    /* Fixed money counter */
     #money-counter {
-      margin-top: auto;       /* pushes it to the bottom */
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
       color: white;
       font-size: 2rem;
       padding: 1rem 0;
-      text-align: center;
-      width: 100%;
-      background: rgba(0,0,0,0.2);  /* optional backdrop */
+      background: rgba(0,0,0,0.2);
     }
   </style>
 </head>
 <body>
-  <div id="squares-container">
-    <div class="square"></div>
-    <div class="square"></div>
+  <div id="hands-container">
+    <div class="hand">
+      <div class="card-label">House</div>
+      <div class="card"></div>
+    </div>
+    <div class="hand">
+      <div class="card-label">Player</div>
+      <div class="card"></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button id="hit-button">Hit</button>
+    <button id="stand-button">Stand</button>
   </div>
 
   <div id="money-counter">0</div>
 
   <script>
-    // Simple JavaScript “money” counter placeholder
+    // placeholder money logic
     let money = 0;
     const counter = document.getElementById('money-counter');
     function updateMoney() {
       counter.textContent = money;
     }
-    // Call once to initialize
     updateMoney();
 
-    // Example: increment on click of first square
-    document.querySelector('#squares-container .square')
+    // example: increment money on Hit
+    document.getElementById('hit-button')
       .addEventListener('click', () => {
         money += 1;
         updateMoney();
