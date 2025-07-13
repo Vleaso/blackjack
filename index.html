@@ -1,10 +1,83 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>My HTML Game</title>
-  </head>
-  <body style="background-color: gray;">
-    <h1>Hello, world!</h1>
-    <p>This is my game page.</p>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My HTML Game</title>
+  <style>
+    /* root‐level CSS variables for easy tweaking */
+    :root {
+      --bg-color: rgb(18, 17, 23);
+      --square-color: rgb(109, 252, 135);
+      /* base square width (20vw = 20% of viewport width) */
+      --square-width: 20vw;
+      /* gap = half the square’s width */
+      --square-gap: calc(var(--square-width) / 2);
+    }
+
+    /* make body fill screen, stack squares & money */
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: var(--bg-color);
+    }
+
+    /* container to stack the two squares with the correct gap */
+    #squares-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--square-gap);
+      /* push squares down a bit if you like:
+         padding-top: 10vh; */
+    }
+
+    /* each square, ratio 5:7 (w:h) */
+    .square {
+      width: var(--square-width);
+      height: calc(var(--square-width) * 7 / 5);
+      background-color: var(--square-color);
+    }
+
+    /* money counter at bottom center */
+    #money-counter {
+      margin-top: auto;       /* pushes it to the bottom */
+      color: white;
+      font-size: 2rem;
+      padding: 1rem 0;
+      text-align: center;
+      width: 100%;
+      background: rgba(0,0,0,0.2);  /* optional backdrop */
+    }
+  </style>
+</head>
+<body>
+  <div id="squares-container">
+    <div class="square"></div>
+    <div class="square"></div>
+  </div>
+
+  <div id="money-counter">0</div>
+
+  <script>
+    // Simple JavaScript “money” counter placeholder
+    let money = 0;
+    const counter = document.getElementById('money-counter');
+    function updateMoney() {
+      counter.textContent = money;
+    }
+    // Call once to initialize
+    updateMoney();
+
+    // Example: increment on click of first square
+    document.querySelector('#squares-container .square')
+      .addEventListener('click', () => {
+        money += 1;
+        updateMoney();
+      });
+  </script>
+</body>
 </html>
