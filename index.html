@@ -1,116 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#121117" />
-  <link rel="manifest" href="manifest.json" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#121117">
+  <link rel="manifest" href="manifest.json">
   <title>Blackjack PWA</title>
   <style>
     :root {
-      --bg-color: rgb(18, 17, 23);
-      --card-color: rgb(109, 252, 135);
+      --bg-color: rgb(18,17,23);
+      --card-color: rgb(109,252,135);
       --card-width: 20vw;
+      --card-gap: 0.5rem;
     }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background-color: var(--bg-color);
+    body { margin:0; min-height:100vh; display:flex; flex-direction:column; align-items:center; background-color:var(--bg-color); }
+    #hands-container { display:flex; flex-direction:column; align-items:center; gap:calc(var(--card-width)/2); padding-top:5vh; }
+    .hand { display:flex; flex-direction:column; align-items:center; }
+    .card-label { color:white; margin-bottom:0.5rem; font-size:1.25rem; }
+    .cards { display:flex; gap:var(--card-gap); }
+    .card { width:var(--card-width); height:calc(var(--card-width)*7/5); background-color:var(--card-color); border-radius:0.5rem;
+      display:flex; align-items:center; justify-content:center; color:white; font-size:1.5rem;
+      opacity:0; transform:translateX(100%);
     }
-
-    #hands-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: calc(var(--card-width) / 2);
-      padding-top: 5vh;
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+    @keyframes slideIn { from{transform:translateX(100%);} to{transform:translateX(0);} }
+    .fade-slide { animation:fadeIn 1s ease-in forwards, slideIn 2s ease-out forwards; }
+    #controls { display:flex; gap:1rem; margin-top:2rem; }
+    #controls button { padding:0.75rem 1.5rem; font-size:16px; touch-action:manipulation; cursor:pointer; }
+    #money-counter { position:fixed; bottom:0; width:100%; text-align:center; font-size:2rem;
+      padding:1rem 0; background:rgba(0,0,0,0.2); color:white; position:relative;
     }
-
-    .hand {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .card-label {
-      color: white;
-      margin-bottom: 0.5rem;
-      font-size: 1.25rem;
-    }
-
-    .cards {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .card {
-      width: var(--card-width);
-      height: calc(var(--card-width) * 7 / 5);
-      background-color: var(--card-color);
-      border-radius: 0.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 1.5rem;
-      opacity: 0;
-      transform: translateX(100%);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-    @keyframes slideIn {
-      from { transform: translateX(100%); }
-      to   { transform: translateX(0); }
-    }
-    .animate-card {
-      animation: fadeIn 1s ease-in forwards, slideIn 2s ease-out forwards;
-    }
-
-    #controls {
-      display: flex;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-    #controls button {
-      padding: 0.75rem 1.5rem;
-      font-size: 16px;
-      touch-action: manipulation;
-      cursor: pointer;
-    }
-
-    #money-counter {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      text-align: center;
-      font-size: 2rem;
-      padding: 1rem 0;
-      background: rgba(0,0,0,0.2);
-      color: white;
-      position: relative;
-    }
-
-    @keyframes popUpMoney {
-      from { opacity: 1; transform: translateX(-50%) translateY(0); }
-      to   { opacity: 0; transform: translateX(-50%) translateY(-100px); }
-    }
-    .money-popup {
-      position: absolute;
-      left: 50%;
-      bottom: 100%;
-      transform: translateX(-50%) translateY(0);
-      font-size: 1.5rem;
-      pointer-events: none;
-      animation: popUpMoney 2s linear forwards;
+    @keyframes popUp { from{opacity:1;transform:translateY(0);} to{opacity:0;transform:translateY(-100px);} }
+    .popup { position:absolute; left:50%; bottom:100%; transform:translateX(-50%);
+      pointer-events:none; font-size:1.5rem; animation:popUp 2s linear forwards;
     }
   </style>
 </head>
@@ -125,129 +49,111 @@
       <div class="cards" id="player-cards"></div>
     </div>
   </div>
-
   <div id="controls">
     <button id="hit-button">Hit</button>
     <button id="stand-button">Stand</button>
   </div>
-
   <div id="money-counter">0</div>
-
   <script>
     // disable double-tap zoom
-    let lastTouch = 0;
-    document.addEventListener('touchend', function(e) {
-      const now = Date.now();
-      if (now - lastTouch <= 300) e.preventDefault();
-      lastTouch = now;
-    }, false);
+    let lastTouch=0;
+    document.addEventListener('touchend',e=>{const now=Date.now(); if(now-lastTouch<=300) e.preventDefault(); lastTouch=now;},false);
 
-    let playerCards = [];
-    let houseCards = [];
-    let money = 0;
-    let gameOver = false;
+    // state
+    let playerCards=[], houseCards=[], money=0, gameOver=false;
 
-    const pcDiv = document.getElementById('player-cards');
-    const hcDiv = document.getElementById('house-cards');
-    const psSpan = document.getElementById('player-score');
-    const hsSpan = document.getElementById('house-score');
-    const counter = document.getElementById('money-counter');
-    const hitBtn = document.getElementById('hit-button');
-    const standBtn = document.getElementById('stand-button');
+    // refs
+    const pcDiv=document.getElementById('player-cards');
+    const hcDiv=document.getElementById('house-cards');
+    const psSpan=document.getElementById('player-score');
+    const hsSpan=document.getElementById('house-score');
+    const counter=document.getElementById('money-counter');
+    const hitBtn=document.getElementById('hit-button');
+    const standBtn=document.getElementById('stand-button');
 
-    function drawCard() {
-      return Math.floor(Math.random() * 10) + 1;
-    }
-
-    function calcScore(cards) {
-      let total = 0, aces = 0;
-      cards.forEach(c => {
-        if (c === 1) aces++;
-        else total += c;
-      });
-      total += aces * 11;
-      while (total > 21 && aces > 0) {
-        total -= 10;
-        aces--;
-      }
+    // utils
+    const drawCard=_=>Math.floor(Math.random()*10)+1;
+    function calcScore(cards){
+      let total=0, aces=0;
+      cards.forEach(c=>c===1?aces++:total+=c);
+      total+=aces*11;
+      while(total>21 && aces>0){ total-=10; aces--; }
       return total;
     }
-
-    function showMoneyPopup(amount) {
-      const popup = document.createElement('span');
-      popup.className = 'money-popup';
-      popup.textContent = (amount > 0 ? '+' + amount : amount);
-      popup.style.color = amount > 0 ? 'limegreen' : 'red';
-      counter.appendChild(popup);
-      setTimeout(() => popup.remove(), 2000);
+    function showResult(text,color){
+      const pop=document.createElement('span'); pop.className='popup'; pop.textContent=text; pop.style.color=color;
+      counter.appendChild(pop);
+      setTimeout(()=>pop.remove(),2000);
+    }
+    function updateMoney(){
+      counter.textContent=money;
+      counter.style.color=money<0?'red':'white';
     }
 
-    function updateMoney() {
-      counter.textContent = money;
-      counter.style.color = money < 0 ? 'red' : 'white';
+    // FLIP container animation + individual card
+    function addCard(handDiv,value,delay=0){
+      // FLIP on container
+      const container=handDiv;
+      const firstRect=container.getBoundingClientRect();
+      // create new card
+      const card=document.createElement('div');
+      card.className='card'; card.textContent=value;
+      if(delay) card.style.animationDelay=delay+'s';
+      container.appendChild(card);
+      // compute shift
+      const lastRect=container.getBoundingClientRect();
+      const dx=firstRect.left - lastRect.left;
+      // apply inverse
+      container.style.transform=`translateX(${dx}px)`;
+      // trigger
+      container.style.transition='transform 2s ease-out';
+      container.style.transform='';
+      // cleanup
+      setTimeout(()=>{ container.style.transition=''; },2000);
+      // fade+slide new card
+      requestAnimationFrame(()=>{ card.classList.add('fade-slide'); });
     }
 
-    function render() {
-      pcDiv.innerHTML = '';
-      playerCards.forEach(c => {
-        const d = document.createElement('div');
-        d.className = 'card animate-card';
-        d.textContent = c;
-        pcDiv.appendChild(d);
-      });
-      hcDiv.innerHTML = '';
-      houseCards.forEach(c => {
-        const d = document.createElement('div');
-        d.className = 'card animate-card';
-        d.textContent = c;
-        hcDiv.appendChild(d);
-      });
-      psSpan.textContent = calcScore(playerCards);
-      hsSpan.textContent = calcScore(houseCards);
+    function startRound(){
+      gameOver=false;
+      playerCards=[drawCard()]; houseCards=[drawCard()];
+      pcDiv.innerHTML=''; hcDiv.innerHTML='';
+      addCard(pcDiv,playerCards[0],0);
+      addCard(hcDiv,houseCards[0],1);
+      psSpan.textContent=calcScore(playerCards);
+      hsSpan.textContent=calcScore(houseCards);
     }
-
-    function startRound() {
-      gameOver = false;
-      playerCards = [drawCard()];
-      houseCards  = [drawCard()];
-      render();
-    }
-
-    function playerHit() {
-      if (gameOver) { startRound(); return; }
+    function playerHit(){
       playerCards.push(drawCard());
-      if (calcScore(playerCards) > 21) { endRound(); }
-      else { houseHitOnce(); }
-      render();
+      addCard(pcDiv,playerCards.at(-1),0);
+      if(calcScore(houseCards)<17){
+        houseCards.push(drawCard());
+        addCard(hcDiv,houseCards.at(-1),1);
+      }
+      psSpan.textContent=calcScore(playerCards);
+      hsSpan.textContent=calcScore(houseCards);
+      if(calcScore(playerCards)>21) endRound();
+    }
+    function housePlay(){
+      while(calcScore(houseCards)<17){
+        houseCards.push(drawCard());
+        addCard(hcDiv,houseCards.at(-1),1);
+      }
+      hsSpan.textContent=calcScore(houseCards);
+    }
+    function endRound(){
+      gameOver=true;
+      const p=calcScore(playerCards), h=calcScore(houseCards);
+      if(p>21||(h<=21&&h>p)){
+        money-=100; showResult('-100','red');
+      } else if(h>21||p>h){
+        money+=100; showResult('+100','limegreen');
+      } else showResult('Push','white');
+      updateMoney();
     }
 
-    function houseHitOnce() {
-      if (calcScore(houseCards) < 17) { houseCards.push(drawCard()); }
-    }
-
-    function housePlay() {
-      while (calcScore(houseCards) < 17) { houseCards.push(drawCard()); }
-    }
-
-    function endRound() {
-      gameOver = true;
-      const p = calcScore(playerCards);
-      const h = calcScore(houseCards);
-      let delta = 0;
-      if (p > 21 || (h <= 21 && h > p)) delta = -100;
-      else if (h > 21 || p > h) delta = 100;
-      if (delta !== 0) { money += delta; showMoneyPopup(delta); }
-      updateMoney(); render();
-    }
-
-    hitBtn.addEventListener('click', () => {
-      if (playerCards.length === 0) startRound();
-      playerHit();
-    });
-    standBtn.addEventListener('click', () => {
-      if (playerCards.length === 0) return;
-      housePlay(); endRound();
-    });
+    hitBtn.addEventListener('click',()=>{ if(gameOver||!playerCards.length) startRound(); else playerHit(); });
+    standBtn.addEventListener('click',()=>{ if(gameOver||!playerCards.length) startRound(); else{ housePlay(); endRound(); }});
 
     updateMoney();
   </script>
